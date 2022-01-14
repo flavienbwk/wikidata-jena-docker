@@ -1,1 +1,5 @@
 fuseki-data
+wikidata/*
+!wikidata/.gitkeep
+jena-tools/*
+!jena-tools/.gitkeep
