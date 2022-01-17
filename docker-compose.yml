@@ -6,7 +6,7 @@ services:
     container_name: fuseki
     ## Example:
     ## command: [ "--tdb2", "--update", "--loc", "databases/DB2", "/ds" ]
-    image: secoresearch/fuseki:4.3.2
+    build: .
     ports:
       - "3030:3030"
     stdin_open: true # docker run -i
@@ -15,7 +15,6 @@ services:
       - ./fuseki-configuration:/fuseki-base/configuration
       - ./fuseki-data:/fuseki-base/databases
       - ./wikidata:/wikidata:ro
-      - ./jena-tools:/jena-tools:ro
     environment:
       ADMIN_PASSWORD: mySuperSecurePassword
       ENABLE_DATA_WRITE: "true"

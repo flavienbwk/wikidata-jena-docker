@@ -12,16 +12,6 @@ WikiData import in Apache Jena tripletstore (TDB) to be queried with SparQL.
 
 From [WikiData dumps](https://dumps.wikimedia.org/wikidatawiki/entities/), download the [`latest-all.ttl.gz`](https://dumps.wikimedia.org/wikidatawiki/entities/latest-all.ttl.gz) file (~104 Go)
 
-## Download Jena tools
-
-This will allow us to bulk insert WikiData later
-
-```bash
-wget https://dlcdn.apache.org/jena/binaries/apache-jena-4.3.2.zip
-unzip -d jena-tools apache-jena-4.3.2.zip
-rm apache-jena-4.3.2.zip
-```
-
 ## Start Fuseki
 
 Run the following commands :
@@ -38,7 +28,7 @@ Connect with user `admin` and the password set in your docker-compose configurat
 
 ## Import data
 
-_This requires 670Go of disk space at the time of the writing._
+_This requires 701Go of disk space at the time of the writing._
 
 **Place** the downloaded `latest-all.ttl.gz` file into the `wikidata/` directory
 
@@ -52,11 +42,40 @@ gzip -d latest-all.ttl.gz
 **Import** the data :
 
 ```bash
-docker-compose exec fuseki
+docker-compose exec fuseki bash
 
 # Inside container
-/jena-tools/apache-jena-4.3.2/bin/tdb2.xloader --phase data --loc data/ wikidata/latest-all.ttl
-/jena-tools/apache-jena-4.3.2/bin/tdb2.xloader --phase index --loc data/
+cd /jena-tools/apache-jena-4.3.2/bin
+/jena-tools/apache-jena-4.3.2/bin/tdb2.xloader --loc /fuseki-base/databases/wikidata /wikidata/latest-all.ttl
+```
+
+In a 16Gb RAM system, _xloader_ will load 10Gb chunks in RAM and then write data to the disk.
+
+This operation can take a lot of time (start: 21h50, end: , took: days on quad-core server-grade AMD CPU). There are two parts :
+
+- Data storage (~ 1 day)
+- Data indexing
+
+## SparQL querying
+
+Now, you can go to the dashboard page of your server at port `:3030` and test the following query :
+
+```sparql
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?charLabel ?groupLabel
+WHERE {
+	?group 	wdt:P31 wd:Q14514600;  		# ist eine Gruppe fiktiver Figuren
+          	wdt:P1080 wd:Q931597.  		# aus fiktivem Marvel Universum
+ 	?char 	wdt:P463 ?group. 			# Mitglied der Gruppe
+ 	?char 	rdfs:label ?charLabel.		# Label der Figur
+ 	?group 	rdfs:label ?groupLabel. 	# Label der Gruppe
+ 	FILTER (LANG(?charLabel) = 'de').
+ 	FILTER (LANG(?groupLabel) = 'de').
+}
+LIMIT 1000
 ```
 
 ## Credits
