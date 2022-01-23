@@ -24,8 +24,6 @@ sudo chown 9008 -R fuseki-configuration # Internal fuseki user
 docker-compose up -d
 ```
 
-Connect with user `admin` and the password set in your docker-compose configuration
-
 ## Import data
 
 _This requires 701Go of disk space at the time of the writing._
@@ -76,6 +74,31 @@ WHERE {
  	FILTER (LANG(?groupLabel) = 'de').
 }
 LIMIT 1000
+```
+
+Connect with user `admin` and the password set in your docker-compose configuration
+
+Or query manually inside the container :
+
+```sparql
+/jena-tools/apache-jena-4.3.2/bin/tdb2.tdbquery --loc /fuseki-base/databases/wikidata "
+
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?charLabel ?groupLabel
+WHERE {
+	?group 	wdt:P31 wd:Q14514600;  		# is a group of fictional characters
+          	wdt:P1080 wd:Q931597.  		# from fictional Marvel universe
+ 	?char 	wdt:P463 ?group. 			# Member of the group
+ 	?char 	rdfs:label ?charLabel.		# Character label
+ 	?group 	rdfs:label ?groupLabel. 	# Label of the group
+ 	FILTER (LANG(?charLabel) = 'de').
+ 	FILTER (LANG(?groupLabel) = 'de').
+}
+LIMIT 1000
+"
 ```
 
 ## Credits
