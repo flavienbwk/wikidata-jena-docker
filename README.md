@@ -24,6 +24,17 @@ sudo chown 9008 -R fuseki-configuration # Internal fuseki user
 docker-compose up -d
 ```
 
+## Resources considerations
+
+:warning: Importing Wikidata takes a **lot of time** to index the 16.805 billion triples on a 24-threads bi-Xeon E5 CPU and 189Gb of RAM (128Gb of RAM is sufficient, consumption is below 100Gb). We recommend using a [cloud provider](https://www.scaleway.com/en/elastic-metal/).
+
+There are two parts :
+
+- Data storage (took: 2d16h17m)
+- Data indexing (SPO took: 32h50m, POS: 77h19m, OPS: 32h01m)
+
+> Number of triples at the time of the writing is (a bit more than) `16 805 375 870`
+
 ## Import data
 
 _This requires 701Go of disk space at the time of the writing._
@@ -44,15 +55,8 @@ docker-compose exec fuseki bash
 
 # Inside container
 cd /jena-tools/apache-jena-4.3.2/bin
-/jena-tools/apache-jena-4.3.2/bin/tdb2.xloader --loc /fuseki-base/databases/wikidata /wikidata/latest-all.ttl
+/jena-tools/apache-jena-4.3.2/bin/tdb2.xloader --loc /fuseki-base/databases/wikidata /wikidata/latest-all.ttl # this takes a LOT of time
 ```
-
-In a 16Gb RAM system, _xloader_ will load 10Gb chunks in RAM and then write data to the disk.
-
-This operation can take a lot of time (start: 21h50, end: , took: days on quad-core server-grade AMD CPU). There are two parts :
-
-- Data storage (~ 1 day)
-- Data indexing
 
 ## SparQL querying
 
@@ -65,13 +69,13 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?charLabel ?groupLabel
 WHERE {
-	?group 	wdt:P31 wd:Q14514600;  		# ist eine Gruppe fiktiver Figuren
-          	wdt:P1080 wd:Q931597.  		# aus fiktivem Marvel Universum
- 	?char 	wdt:P463 ?group. 			# Mitglied der Gruppe
- 	?char 	rdfs:label ?charLabel.		# Label der Figur
- 	?group 	rdfs:label ?groupLabel. 	# Label der Gruppe
- 	FILTER (LANG(?charLabel) = 'de').
- 	FILTER (LANG(?groupLabel) = 'de').
+	?group 	wdt:P31 wd:Q14514600;  		# is a group of fictional characters
+          	wdt:P1080 wd:Q931597.  		# from fictional Marvel universe
+ 	?char 	wdt:P463 ?group. 			# Member of the group
+ 	?char 	rdfs:label ?charLabel.		# Label of the character
+ 	?group 	rdfs:label ?groupLabel. 	# Label of the group
+ 	FILTER (LANG(?charLabel) = 'fr').	# Get labels on french language
+ 	FILTER (LANG(?groupLabel) = 'fr').	# Get labels on french language
 }
 LIMIT 1000
 ```
@@ -92,10 +96,10 @@ WHERE {
 	?group 	wdt:P31 wd:Q14514600;  		# is a group of fictional characters
           	wdt:P1080 wd:Q931597.  		# from fictional Marvel universe
  	?char 	wdt:P463 ?group. 			# Member of the group
- 	?char 	rdfs:label ?charLabel.		# Character label
+ 	?char 	rdfs:label ?charLabel.		# Label of the character
  	?group 	rdfs:label ?groupLabel. 	# Label of the group
- 	FILTER (LANG(?charLabel) = 'de').
- 	FILTER (LANG(?groupLabel) = 'de').
+ 	FILTER (LANG(?charLabel) = 'fr').	# Get labels on french language
+ 	FILTER (LANG(?groupLabel) = 'fr').	# Get labels on french language
 }
 LIMIT 1000
 "
@@ -104,4 +108,4 @@ LIMIT 1000
 ## Credits
 
 - Using [fuseki-docker](https://github.com/SemanticComputing/fuseki-docker)
-- [Importing](https://muncca.com/2019/02/14/wikidata-import-in-apache-jena/#top) WikiData into Jena
+- [Importing WikiData into Jena](https://muncca.com/2019/02/14/wikidata-import-in-apache-jena/#top)
